@@ -16,7 +16,7 @@ If no S3 bucket is provided, it will also transparently switch to the default be
 
 Please refer to [actions/cache](https://github.com/actions/cache) for usage.
 
-## Usage outside step-security
+## Usage outside RunsOn
 
 If you want to use this in your own infrastructure, setup your AWS credentials with [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials), then:
 
