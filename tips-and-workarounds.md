@@ -2,7 +2,7 @@
 
 ## Cache segment restore timeout
 
-A cache gets downloaded in multiple segments of fixed sizes (`1GB` for a `32-bit` runner and `2GB` for a `64-bit` runner). Sometimes, a segment download gets stuck which causes the workflow job to be stuck forever and fail. Version `v3.0.8` of `actions/cache` introduces a segment download timeout. The segment download timeout will allow the segment download to get aborted and hence allow the job to proceed with a cache miss.
+A cache gets downloaded in multiple segments of fixed sizes (`1GB` for a `32-bit` runner and `2GB` for a `64-bit` runner). Sometimes, a segment download gets stuck which causes the workflow job to be stuck forever and fail. Version `v3.0.8` of `step-security/runs-on-cache` introduces a segment download timeout. The segment download timeout will allow the segment download to get aborted and hence allow the job to proceed with a cache miss.
 
 Default value of this timeout is 10 minutes and can be customized by specifying an [environment variable](https://docs.github.com/en/actions/learn-github-actions/environment-variables) named `SEGMENT_DOWNLOAD_TIMEOUT_MINS` with timeout value in minutes.
 
@@ -12,7 +12,7 @@ A cache today is immutable and cannot be updated. But some use cases require the
 
   ```yaml
       - name: update cache on every commit
-        uses: step-security/cache@v3
+        uses: step-security/runs-on-cache@v3
         with:
           path: prime-numbers
           key: primes-${{ runner.os }}-${{ github.run_id }} # Can use time based key as well
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       # `actions:write` permission is required to delete caches
-      #   See also: https://docs.github.com/en/rest/step-security/cache?apiVersion=2022-11-28#delete-a-github-actions-cache-for-a-repository-using-a-cache-id
+      #   See also: https://docs.github.com/en/rest/step-security/runs-on-cache?apiVersion=2022-11-28#delete-a-github-actions-cache-for-a-repository-using-a-cache-id
       actions: write
       contents: read
     steps:

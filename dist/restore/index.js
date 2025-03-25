@@ -98164,11 +98164,11 @@ function validateSubscription() {
         }
         catch (error) {
             if ((0, axios_1.isAxiosError)(error) && error.response) {
-                core.error('Subscription is not valid. Reach out to support@stepsecurity.io');
+                core.error("Subscription is not valid. Reach out to support@stepsecurity.io");
                 process.exit(1);
             }
             else {
-                core.info('Timeout or API not reachable. Continuing to next step.');
+                core.info("Timeout or API not reachable. Continuing to next step.");
             }
         }
     });
