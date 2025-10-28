@@ -69,6 +69,9 @@ export async function restoreImpl(
         }
 
         if (!cacheKey) {
+            // `cache-hit` is intentionally not set to `false` here to preserve existing behavior
+            // See https://github.com/actions/cache/issues/1466
+
             if (failOnCacheMiss) {
                 throw new Error(
                     `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
@@ -80,7 +83,6 @@ export async function restoreImpl(
                     ...restoreKeys
                 ].join(", ")}`
             );
-
             return;
         }
 
