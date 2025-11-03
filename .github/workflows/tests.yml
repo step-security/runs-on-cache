@@ -85,7 +85,7 @@ jobs:
       run: __tests__/verify-cache-files.sh ${{ runner.os }} ~/test-cache
 
   test-container:
-    runs-on: runs-on,runner=2cpu-linux-arm64
+    runs-on: ubuntu-latest
     container:
       image: ubuntu:latest
     steps:
