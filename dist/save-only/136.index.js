@@ -257,287 +257,11 @@ var STSClient = __webpack_require__(63723);
 var smithyClient = __webpack_require__(21868);
 var middlewareEndpoint = __webpack_require__(42628);
 var EndpointParameters = __webpack_require__(76811);
-var schema = __webpack_require__(26890);
+var schemas_0 = __webpack_require__(1684);
+var errors = __webpack_require__(41688);
 var client = __webpack_require__(5152);
 var regionConfigResolver = __webpack_require__(36463);
-
-class STSServiceException extends smithyClient.ServiceException {
-    constructor(options) {
-        super(options);
-        Object.setPrototypeOf(this, STSServiceException.prototype);
-    }
-}
-
-class ExpiredTokenException extends STSServiceException {
-    name = "ExpiredTokenException";
-    $fault = "client";
-    constructor(opts) {
-        super({
-            name: "ExpiredTokenException",
-            $fault: "client",
-            ...opts,
-        });
-        Object.setPrototypeOf(this, ExpiredTokenException.prototype);
-    }
-}
-class MalformedPolicyDocumentException extends STSServiceException {
-    name = "MalformedPolicyDocumentException";
-    $fault = "client";
-    constructor(opts) {
-        super({
-            name: "MalformedPolicyDocumentException",
-            $fault: "client",
-            ...opts,
-        });
-        Object.setPrototypeOf(this, MalformedPolicyDocumentException.prototype);
-    }
-}
-class PackedPolicyTooLargeException extends STSServiceException {
-    name = "PackedPolicyTooLargeException";
-    $fault = "client";
-    constructor(opts) {
-        super({
-            name: "PackedPolicyTooLargeException",
-            $fault: "client",
-            ...opts,
-        });
-        Object.setPrototypeOf(this, PackedPolicyTooLargeException.prototype);
-    }
-}
-class RegionDisabledException extends STSServiceException {
-    name = "RegionDisabledException";
-    $fault = "client";
-    constructor(opts) {
-        super({
-            name: "RegionDisabledException",
-            $fault: "client",
-            ...opts,
-        });
-        Object.setPrototypeOf(this, RegionDisabledException.prototype);
-    }
-}
-class IDPRejectedClaimException extends STSServiceException {
-    name = "IDPRejectedClaimException";
-    $fault = "client";
-    constructor(opts) {
-        super({
-            name: "IDPRejectedClaimException",
-            $fault: "client",
-            ...opts,
-        });
-        Object.setPrototypeOf(this, IDPRejectedClaimException.prototype);
-    }
-}
-class InvalidIdentityTokenException extends STSServiceException {
-    name = "InvalidIdentityTokenException";
-    $fault = "client";
-    constructor(opts) {
-        super({
-            name: "InvalidIdentityTokenException",
-            $fault: "client",
-            ...opts,
-        });
-        Object.setPrototypeOf(this, InvalidIdentityTokenException.prototype);
-    }
-}
-class IDPCommunicationErrorException extends STSServiceException {
-    name = "IDPCommunicationErrorException";
-    $fault = "client";
-    constructor(opts) {
-        super({
-            name: "IDPCommunicationErrorException",
-            $fault: "client",
-            ...opts,
-        });
-        Object.setPrototypeOf(this, IDPCommunicationErrorException.prototype);
-    }
-}
-
-const _A = "Arn";
-const _AKI = "AccessKeyId";
-const _AR = "AssumeRole";
-const _ARI = "AssumedRoleId";
-const _ARR = "AssumeRoleRequest";
-const _ARRs = "AssumeRoleResponse";
-const _ARU = "AssumedRoleUser";
-const _ARWWI = "AssumeRoleWithWebIdentity";
-const _ARWWIR = "AssumeRoleWithWebIdentityRequest";
-const _ARWWIRs = "AssumeRoleWithWebIdentityResponse";
-const _Au = "Audience";
-const _C = "Credentials";
-const _CA = "ContextAssertion";
-const _DS = "DurationSeconds";
-const _E = "Expiration";
-const _EI = "ExternalId";
-const _ETE = "ExpiredTokenException";
-const _IDPCEE = "IDPCommunicationErrorException";
-const _IDPRCE = "IDPRejectedClaimException";
-const _IITE = "InvalidIdentityTokenException";
-const _K = "Key";
-const _MPDE = "MalformedPolicyDocumentException";
-const _P = "Policy";
-const _PA = "PolicyArns";
-const _PAr = "ProviderArn";
-const _PC = "ProvidedContexts";
-const _PCLT = "ProvidedContextsListType";
-const _PCr = "ProvidedContext";
-const _PDT = "PolicyDescriptorType";
-const _PI = "ProviderId";
-const _PPS = "PackedPolicySize";
-const _PPTLE = "PackedPolicyTooLargeException";
-const _Pr = "Provider";
-const _RA = "RoleArn";
-const _RDE = "RegionDisabledException";
-const _RSN = "RoleSessionName";
-const _SAK = "SecretAccessKey";
-const _SFWIT = "SubjectFromWebIdentityToken";
-const _SI = "SourceIdentity";
-const _SN = "SerialNumber";
-const _ST = "SessionToken";
-const _T = "Tags";
-const _TC = "TokenCode";
-const _TTK = "TransitiveTagKeys";
-const _Ta = "Tag";
-const _V = "Value";
-const _WIT = "WebIdentityToken";
-const _a = "arn";
-const _aKST = "accessKeySecretType";
-const _aQE = "awsQueryError";
-const _c = "client";
-const _cTT = "clientTokenType";
-const _e = "error";
-const _hE = "httpError";
-const _m = "message";
-const _pDLT = "policyDescriptorListType";
-const _s = "smithy.ts.sdk.synthetic.com.amazonaws.sts";
-const _tLT = "tagListType";
-const n0 = "com.amazonaws.sts";
-var accessKeySecretType = [0, n0, _aKST, 8, 0];
-var clientTokenType = [0, n0, _cTT, 8, 0];
-var AssumedRoleUser$ = [3, n0, _ARU, 0, [_ARI, _A], [0, 0], 2];
-var AssumeRoleRequest$ = [
-    3,
-    n0,
-    _ARR,
-    0,
-    [_RA, _RSN, _PA, _P, _DS, _T, _TTK, _EI, _SN, _TC, _SI, _PC],
-    [0, 0, () => policyDescriptorListType, 0, 1, () => tagListType, 64 | 0, 0, 0, 0, 0, () => ProvidedContextsListType],
-    2,
-];
-var AssumeRoleResponse$ = [
-    3,
-    n0,
-    _ARRs,
-    0,
-    [_C, _ARU, _PPS, _SI],
-    [[() => Credentials$, 0], () => AssumedRoleUser$, 1, 0],
-];
-var AssumeRoleWithWebIdentityRequest$ = [
-    3,
-    n0,
-    _ARWWIR,
-    0,
-    [_RA, _RSN, _WIT, _PI, _PA, _P, _DS],
-    [0, 0, [() => clientTokenType, 0], 0, () => policyDescriptorListType, 0, 1],
-    3,
-];
-var AssumeRoleWithWebIdentityResponse$ = [
-    3,
-    n0,
-    _ARWWIRs,
-    0,
-    [_C, _SFWIT, _ARU, _PPS, _Pr, _Au, _SI],
-    [[() => Credentials$, 0], 0, () => AssumedRoleUser$, 1, 0, 0, 0],
-];
-var Credentials$ = [
-    3,
-    n0,
-    _C,
-    0,
-    [_AKI, _SAK, _ST, _E],
-    [0, [() => accessKeySecretType, 0], 0, 4],
-    4,
-];
-var ExpiredTokenException$ = [
-    -3,
-    n0,
-    _ETE,
-    { [_aQE]: [`ExpiredTokenException`, 400], [_e]: _c, [_hE]: 400 },
-    [_m],
-    [0],
-];
-schema.TypeRegistry.for(n0).registerError(ExpiredTokenException$, ExpiredTokenException);
-var IDPCommunicationErrorException$ = [
-    -3,
-    n0,
-    _IDPCEE,
-    { [_aQE]: [`IDPCommunicationError`, 400], [_e]: _c, [_hE]: 400 },
-    [_m],
-    [0],
-];
-schema.TypeRegistry.for(n0).registerError(IDPCommunicationErrorException$, IDPCommunicationErrorException);
-var IDPRejectedClaimException$ = [
-    -3,
-    n0,
-    _IDPRCE,
-    { [_aQE]: [`IDPRejectedClaim`, 403], [_e]: _c, [_hE]: 403 },
-    [_m],
-    [0],
-];
-schema.TypeRegistry.for(n0).registerError(IDPRejectedClaimException$, IDPRejectedClaimException);
-var InvalidIdentityTokenException$ = [
-    -3,
-    n0,
-    _IITE,
-    { [_aQE]: [`InvalidIdentityToken`, 400], [_e]: _c, [_hE]: 400 },
-    [_m],
-    [0],
-];
-schema.TypeRegistry.for(n0).registerError(InvalidIdentityTokenException$, InvalidIdentityTokenException);
-var MalformedPolicyDocumentException$ = [
-    -3,
-    n0,
-    _MPDE,
-    { [_aQE]: [`MalformedPolicyDocument`, 400], [_e]: _c, [_hE]: 400 },
-    [_m],
-    [0],
-];
-schema.TypeRegistry.for(n0).registerError(MalformedPolicyDocumentException$, MalformedPolicyDocumentException);
-var PackedPolicyTooLargeException$ = [
-    -3,
-    n0,
-    _PPTLE,
-    { [_aQE]: [`PackedPolicyTooLarge`, 400], [_e]: _c, [_hE]: 400 },
-    [_m],
-    [0],
-];
-schema.TypeRegistry.for(n0).registerError(PackedPolicyTooLargeException$, PackedPolicyTooLargeException);
-var PolicyDescriptorType$ = [3, n0, _PDT, 0, [_a], [0]];
-var ProvidedContext$ = [3, n0, _PCr, 0, [_PAr, _CA], [0, 0]];
-var RegionDisabledException$ = [
-    -3,
-    n0,
-    _RDE,
-    { [_aQE]: [`RegionDisabledException`, 403], [_e]: _c, [_hE]: 403 },
-    [_m],
-    [0],
-];
-schema.TypeRegistry.for(n0).registerError(RegionDisabledException$, RegionDisabledException);
-var Tag$ = [3, n0, _Ta, 0, [_K, _V], [0, 0], 2];
-var STSServiceException$ = [-3, _s, "STSServiceException", 0, [], []];
-schema.TypeRegistry.for(_s).registerError(STSServiceException$, STSServiceException);
-var policyDescriptorListType = [1, n0, _pDLT, 0, () => PolicyDescriptorType$];
-var ProvidedContextsListType = [1, n0, _PCLT, 0, () => ProvidedContext$];
-var tagListType = [1, n0, _tLT, 0, () => Tag$];
-var AssumeRole$ = [9, n0, _AR, 0, () => AssumeRoleRequest$, () => AssumeRoleResponse$];
-var AssumeRoleWithWebIdentity$ = [
-    9,
-    n0,
-    _ARWWI,
-    0,
-    () => AssumeRoleWithWebIdentityRequest$,
-    () => AssumeRoleWithWebIdentityResponse$,
-];
+var STSServiceException = __webpack_require__(17171);
 
 class AssumeRoleCommand extends smithyClient.Command
     .classBuilder()
@@ -547,7 +271,7 @@ class AssumeRoleCommand extends smithyClient.Command
 })
     .s("AWSSecurityTokenServiceV20110615", "AssumeRole", {})
     .n("STSClient", "AssumeRoleCommand")
-    .sc(AssumeRole$)
+    .sc(schemas_0.AssumeRole$)
     .build() {
 }
 
@@ -559,7 +283,7 @@ class AssumeRoleWithWebIdentityCommand extends smithyClient.Command
 })
     .s("AWSSecurityTokenServiceV20110615", "AssumeRoleWithWebIdentity", {})
     .n("STSClient", "AssumeRoleWithWebIdentityCommand")
-    .sc(AssumeRoleWithWebIdentity$)
+    .sc(schemas_0.AssumeRoleWithWebIdentity$)
     .build() {
 }
 
@@ -695,36 +419,13 @@ Object.defineProperty(exports, "$Command", ({
     enumerable: true,
     get: function () { return smithyClient.Command; }
 }));
-exports.AssumeRole$ = AssumeRole$;
+Object.defineProperty(exports, "STSServiceException", ({
+    enumerable: true,
+    get: function () { return STSServiceException.STSServiceException; }
+}));
 exports.AssumeRoleCommand = AssumeRoleCommand;
-exports.AssumeRoleRequest$ = AssumeRoleRequest$;
-exports.AssumeRoleResponse$ = AssumeRoleResponse$;
-exports.AssumeRoleWithWebIdentity$ = AssumeRoleWithWebIdentity$;
 exports.AssumeRoleWithWebIdentityCommand = AssumeRoleWithWebIdentityCommand;
-exports.AssumeRoleWithWebIdentityRequest$ = AssumeRoleWithWebIdentityRequest$;
-exports.AssumeRoleWithWebIdentityResponse$ = AssumeRoleWithWebIdentityResponse$;
-exports.AssumedRoleUser$ = AssumedRoleUser$;
-exports.Credentials$ = Credentials$;
-exports.ExpiredTokenException = ExpiredTokenException;
-exports.ExpiredTokenException$ = ExpiredTokenException$;
-exports.IDPCommunicationErrorException = IDPCommunicationErrorException;
-exports.IDPCommunicationErrorException$ = IDPCommunicationErrorException$;
-exports.IDPRejectedClaimException = IDPRejectedClaimException;
-exports.IDPRejectedClaimException$ = IDPRejectedClaimException$;
-exports.InvalidIdentityTokenException = InvalidIdentityTokenException;
-exports.InvalidIdentityTokenException$ = InvalidIdentityTokenException$;
-exports.MalformedPolicyDocumentException = MalformedPolicyDocumentException;
-exports.MalformedPolicyDocumentException$ = MalformedPolicyDocumentException$;
-exports.PackedPolicyTooLargeException = PackedPolicyTooLargeException;
-exports.PackedPolicyTooLargeException$ = PackedPolicyTooLargeException$;
-exports.PolicyDescriptorType$ = PolicyDescriptorType$;
-exports.ProvidedContext$ = ProvidedContext$;
-exports.RegionDisabledException = RegionDisabledException;
-exports.RegionDisabledException$ = RegionDisabledException$;
 exports.STS = STS;
-exports.STSServiceException = STSServiceException;
-exports.STSServiceException$ = STSServiceException$;
-exports.Tag$ = Tag$;
 exports.decorateDefaultCredentialProvider = decorateDefaultCredentialProvider;
 exports.getDefaultRoleAssumer = getDefaultRoleAssumer;
 exports.getDefaultRoleAssumerWithWebIdentity = getDefaultRoleAssumerWithWebIdentity;
@@ -734,6 +435,139 @@ Object.keys(STSClient).forEach(function (k) {
         get: function () { return STSClient[k]; }
     });
 });
+Object.keys(schemas_0).forEach(function (k) {
+    if (k !== 'default' && !Object.prototype.hasOwnProperty.call(exports, k)) Object.defineProperty(exports, k, {
+        enumerable: true,
+        get: function () { return schemas_0[k]; }
+    });
+});
+Object.keys(errors).forEach(function (k) {
+    if (k !== 'default' && !Object.prototype.hasOwnProperty.call(exports, k)) Object.defineProperty(exports, k, {
+        enumerable: true,
+        get: function () { return errors[k]; }
+    });
+});
+
+
+/***/ }),
+
+/***/ 17171:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.STSServiceException = exports.__ServiceException = void 0;
+const smithy_client_1 = __webpack_require__(21868);
+Object.defineProperty(exports, "__ServiceException", ({ enumerable: true, get: function () { return smithy_client_1.ServiceException; } }));
+class STSServiceException extends smithy_client_1.ServiceException {
+    constructor(options) {
+        super(options);
+        Object.setPrototypeOf(this, STSServiceException.prototype);
+    }
+}
+exports.STSServiceException = STSServiceException;
+
+
+/***/ }),
+
+/***/ 41688:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.IDPCommunicationErrorException = exports.InvalidIdentityTokenException = exports.IDPRejectedClaimException = exports.RegionDisabledException = exports.PackedPolicyTooLargeException = exports.MalformedPolicyDocumentException = exports.ExpiredTokenException = void 0;
+const STSServiceException_1 = __webpack_require__(17171);
+class ExpiredTokenException extends STSServiceException_1.STSServiceException {
+    name = "ExpiredTokenException";
+    $fault = "client";
+    constructor(opts) {
+        super({
+            name: "ExpiredTokenException",
+            $fault: "client",
+            ...opts,
+        });
+        Object.setPrototypeOf(this, ExpiredTokenException.prototype);
+    }
+}
+exports.ExpiredTokenException = ExpiredTokenException;
+class MalformedPolicyDocumentException extends STSServiceException_1.STSServiceException {
+    name = "MalformedPolicyDocumentException";
+    $fault = "client";
+    constructor(opts) {
+        super({
+            name: "MalformedPolicyDocumentException",
+            $fault: "client",
+            ...opts,
+        });
+        Object.setPrototypeOf(this, MalformedPolicyDocumentException.prototype);
+    }
+}
+exports.MalformedPolicyDocumentException = MalformedPolicyDocumentException;
+class PackedPolicyTooLargeException extends STSServiceException_1.STSServiceException {
+    name = "PackedPolicyTooLargeException";
+    $fault = "client";
+    constructor(opts) {
+        super({
+            name: "PackedPolicyTooLargeException",
+            $fault: "client",
+            ...opts,
+        });
+        Object.setPrototypeOf(this, PackedPolicyTooLargeException.prototype);
+    }
+}
+exports.PackedPolicyTooLargeException = PackedPolicyTooLargeException;
+class RegionDisabledException extends STSServiceException_1.STSServiceException {
+    name = "RegionDisabledException";
+    $fault = "client";
+    constructor(opts) {
+        super({
+            name: "RegionDisabledException",
+            $fault: "client",
+            ...opts,
+        });
+        Object.setPrototypeOf(this, RegionDisabledException.prototype);
+    }
+}
+exports.RegionDisabledException = RegionDisabledException;
+class IDPRejectedClaimException extends STSServiceException_1.STSServiceException {
+    name = "IDPRejectedClaimException";
+    $fault = "client";
+    constructor(opts) {
+        super({
+            name: "IDPRejectedClaimException",
+            $fault: "client",
+            ...opts,
+        });
+        Object.setPrototypeOf(this, IDPRejectedClaimException.prototype);
+    }
+}
+exports.IDPRejectedClaimException = IDPRejectedClaimException;
+class InvalidIdentityTokenException extends STSServiceException_1.STSServiceException {
+    name = "InvalidIdentityTokenException";
+    $fault = "client";
+    constructor(opts) {
+        super({
+            name: "InvalidIdentityTokenException",
+            $fault: "client",
+            ...opts,
+        });
+        Object.setPrototypeOf(this, InvalidIdentityTokenException.prototype);
+    }
+}
+exports.InvalidIdentityTokenException = InvalidIdentityTokenException;
+class IDPCommunicationErrorException extends STSServiceException_1.STSServiceException {
+    name = "IDPCommunicationErrorException";
+    $fault = "client";
+    constructor(opts) {
+        super({
+            name: "IDPCommunicationErrorException",
+            $fault: "client",
+            ...opts,
+        });
+        Object.setPrototypeOf(this, IDPCommunicationErrorException.prototype);
+    }
+}
+exports.IDPCommunicationErrorException = IDPCommunicationErrorException;
 
 
 /***/ }),
@@ -827,6 +661,7 @@ const util_base64_1 = __webpack_require__(72722);
 const util_utf8_1 = __webpack_require__(46090);
 const httpAuthSchemeProvider_1 = __webpack_require__(27851);
 const endpointResolver_1 = __webpack_require__(59765);
+const schemas_0_1 = __webpack_require__(1684);
 const getRuntimeConfig = (config) => {
     return {
         apiVersion: "2011-06-15",
@@ -852,6 +687,7 @@ const getRuntimeConfig = (config) => {
         protocol: config?.protocol ?? protocols_1.AwsQueryProtocol,
         protocolSettings: config?.protocolSettings ?? {
             defaultNamespace: "com.amazonaws.sts",
+            errorTypeRegistries: schemas_0_1.errorTypeRegistries,
             xmlNamespace: "https://sts.amazonaws.com/doc/2011-06-15/",
             version: "2011-06-15",
             serviceTarget: "AWSSecurityTokenServiceV20110615",
@@ -883,6 +719,208 @@ const resolveRuntimeExtensions = (runtimeConfig, extensions) => {
     return Object.assign(runtimeConfig, (0, region_config_resolver_1.resolveAwsRegionExtensionConfiguration)(extensionConfiguration), (0, smithy_client_1.resolveDefaultRuntimeConfig)(extensionConfiguration), (0, protocol_http_1.resolveHttpHandlerRuntimeConfig)(extensionConfiguration), (0, httpAuthExtensionConfiguration_1.resolveHttpAuthRuntimeConfig)(extensionConfiguration));
 };
 exports.resolveRuntimeExtensions = resolveRuntimeExtensions;
+
+
+/***/ }),
+
+/***/ 1684:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AssumeRoleWithWebIdentity$ = exports.AssumeRole$ = exports.Tag$ = exports.ProvidedContext$ = exports.PolicyDescriptorType$ = exports.Credentials$ = exports.AssumeRoleWithWebIdentityResponse$ = exports.AssumeRoleWithWebIdentityRequest$ = exports.AssumeRoleResponse$ = exports.AssumeRoleRequest$ = exports.AssumedRoleUser$ = exports.errorTypeRegistries = exports.RegionDisabledException$ = exports.PackedPolicyTooLargeException$ = exports.MalformedPolicyDocumentException$ = exports.InvalidIdentityTokenException$ = exports.IDPRejectedClaimException$ = exports.IDPCommunicationErrorException$ = exports.ExpiredTokenException$ = exports.STSServiceException$ = void 0;
+const _A = "Arn";
+const _AKI = "AccessKeyId";
+const _AR = "AssumeRole";
+const _ARI = "AssumedRoleId";
+const _ARR = "AssumeRoleRequest";
+const _ARRs = "AssumeRoleResponse";
+const _ARU = "AssumedRoleUser";
+const _ARWWI = "AssumeRoleWithWebIdentity";
+const _ARWWIR = "AssumeRoleWithWebIdentityRequest";
+const _ARWWIRs = "AssumeRoleWithWebIdentityResponse";
+const _Au = "Audience";
+const _C = "Credentials";
+const _CA = "ContextAssertion";
+const _DS = "DurationSeconds";
+const _E = "Expiration";
+const _EI = "ExternalId";
+const _ETE = "ExpiredTokenException";
+const _IDPCEE = "IDPCommunicationErrorException";
+const _IDPRCE = "IDPRejectedClaimException";
+const _IITE = "InvalidIdentityTokenException";
+const _K = "Key";
+const _MPDE = "MalformedPolicyDocumentException";
+const _P = "Policy";
+const _PA = "PolicyArns";
+const _PAr = "ProviderArn";
+const _PC = "ProvidedContexts";
+const _PCLT = "ProvidedContextsListType";
+const _PCr = "ProvidedContext";
+const _PDT = "PolicyDescriptorType";
+const _PI = "ProviderId";
+const _PPS = "PackedPolicySize";
+const _PPTLE = "PackedPolicyTooLargeException";
+const _Pr = "Provider";
+const _RA = "RoleArn";
+const _RDE = "RegionDisabledException";
+const _RSN = "RoleSessionName";
+const _SAK = "SecretAccessKey";
+const _SFWIT = "SubjectFromWebIdentityToken";
+const _SI = "SourceIdentity";
+const _SN = "SerialNumber";
+const _ST = "SessionToken";
+const _T = "Tags";
+const _TC = "TokenCode";
+const _TTK = "TransitiveTagKeys";
+const _Ta = "Tag";
+const _V = "Value";
+const _WIT = "WebIdentityToken";
+const _a = "arn";
+const _aKST = "accessKeySecretType";
+const _aQE = "awsQueryError";
+const _c = "client";
+const _cTT = "clientTokenType";
+const _e = "error";
+const _hE = "httpError";
+const _m = "message";
+const _pDLT = "policyDescriptorListType";
+const _s = "smithy.ts.sdk.synthetic.com.amazonaws.sts";
+const _tLT = "tagListType";
+const n0 = "com.amazonaws.sts";
+const schema_1 = __webpack_require__(26890);
+const errors_1 = __webpack_require__(41688);
+const STSServiceException_1 = __webpack_require__(17171);
+const _s_registry = schema_1.TypeRegistry.for(_s);
+exports.STSServiceException$ = [-3, _s, "STSServiceException", 0, [], []];
+_s_registry.registerError(exports.STSServiceException$, STSServiceException_1.STSServiceException);
+const n0_registry = schema_1.TypeRegistry.for(n0);
+exports.ExpiredTokenException$ = [
+    -3,
+    n0,
+    _ETE,
+    { [_aQE]: [`ExpiredTokenException`, 400], [_e]: _c, [_hE]: 400 },
+    [_m],
+    [0],
+];
+n0_registry.registerError(exports.ExpiredTokenException$, errors_1.ExpiredTokenException);
+exports.IDPCommunicationErrorException$ = [
+    -3,
+    n0,
+    _IDPCEE,
+    { [_aQE]: [`IDPCommunicationError`, 400], [_e]: _c, [_hE]: 400 },
+    [_m],
+    [0],
+];
+n0_registry.registerError(exports.IDPCommunicationErrorException$, errors_1.IDPCommunicationErrorException);
+exports.IDPRejectedClaimException$ = [
+    -3,
+    n0,
+    _IDPRCE,
+    { [_aQE]: [`IDPRejectedClaim`, 403], [_e]: _c, [_hE]: 403 },
+    [_m],
+    [0],
+];
+n0_registry.registerError(exports.IDPRejectedClaimException$, errors_1.IDPRejectedClaimException);
+exports.InvalidIdentityTokenException$ = [
+    -3,
+    n0,
+    _IITE,
+    { [_aQE]: [`InvalidIdentityToken`, 400], [_e]: _c, [_hE]: 400 },
+    [_m],
+    [0],
+];
+n0_registry.registerError(exports.InvalidIdentityTokenException$, errors_1.InvalidIdentityTokenException);
+exports.MalformedPolicyDocumentException$ = [
+    -3,
+    n0,
+    _MPDE,
+    { [_aQE]: [`MalformedPolicyDocument`, 400], [_e]: _c, [_hE]: 400 },
+    [_m],
+    [0],
+];
+n0_registry.registerError(exports.MalformedPolicyDocumentException$, errors_1.MalformedPolicyDocumentException);
+exports.PackedPolicyTooLargeException$ = [
+    -3,
+    n0,
+    _PPTLE,
+    { [_aQE]: [`PackedPolicyTooLarge`, 400], [_e]: _c, [_hE]: 400 },
+    [_m],
+    [0],
+];
+n0_registry.registerError(exports.PackedPolicyTooLargeException$, errors_1.PackedPolicyTooLargeException);
+exports.RegionDisabledException$ = [
+    -3,
+    n0,
+    _RDE,
+    { [_aQE]: [`RegionDisabledException`, 403], [_e]: _c, [_hE]: 403 },
+    [_m],
+    [0],
+];
+n0_registry.registerError(exports.RegionDisabledException$, errors_1.RegionDisabledException);
+exports.errorTypeRegistries = [_s_registry, n0_registry];
+var accessKeySecretType = [0, n0, _aKST, 8, 0];
+var clientTokenType = [0, n0, _cTT, 8, 0];
+exports.AssumedRoleUser$ = [3, n0, _ARU, 0, [_ARI, _A], [0, 0], 2];
+exports.AssumeRoleRequest$ = [
+    3,
+    n0,
+    _ARR,
+    0,
+    [_RA, _RSN, _PA, _P, _DS, _T, _TTK, _EI, _SN, _TC, _SI, _PC],
+    [0, 0, () => policyDescriptorListType, 0, 1, () => tagListType, 64 | 0, 0, 0, 0, 0, () => ProvidedContextsListType],
+    2,
+];
+exports.AssumeRoleResponse$ = [
+    3,
+    n0,
+    _ARRs,
+    0,
+    [_C, _ARU, _PPS, _SI],
+    [[() => exports.Credentials$, 0], () => exports.AssumedRoleUser$, 1, 0],
+];
+exports.AssumeRoleWithWebIdentityRequest$ = [
+    3,
+    n0,
+    _ARWWIR,
+    0,
+    [_RA, _RSN, _WIT, _PI, _PA, _P, _DS],
+    [0, 0, [() => clientTokenType, 0], 0, () => policyDescriptorListType, 0, 1],
+    3,
+];
+exports.AssumeRoleWithWebIdentityResponse$ = [
+    3,
+    n0,
+    _ARWWIRs,
+    0,
+    [_C, _SFWIT, _ARU, _PPS, _Pr, _Au, _SI],
+    [[() => exports.Credentials$, 0], 0, () => exports.AssumedRoleUser$, 1, 0, 0, 0],
+];
+exports.Credentials$ = [
+    3,
+    n0,
+    _C,
+    0,
+    [_AKI, _SAK, _ST, _E],
+    [0, [() => accessKeySecretType, 0], 0, 4],
+    4,
+];
+exports.PolicyDescriptorType$ = [3, n0, _PDT, 0, [_a], [0]];
+exports.ProvidedContext$ = [3, n0, _PCr, 0, [_PAr, _CA], [0, 0]];
+exports.Tag$ = [3, n0, _Ta, 0, [_K, _V], [0, 0], 2];
+var policyDescriptorListType = [1, n0, _pDLT, 0, () => exports.PolicyDescriptorType$];
+var ProvidedContextsListType = [1, n0, _PCLT, 0, () => exports.ProvidedContext$];
+var tagKeyListType = (/* unused pure expression or super */ null && (64 | 0));
+var tagListType = [1, n0, _tLT, 0, () => exports.Tag$];
+exports.AssumeRole$ = [9, n0, _AR, 0, () => exports.AssumeRoleRequest$, () => exports.AssumeRoleResponse$];
+exports.AssumeRoleWithWebIdentity$ = [
+    9,
+    n0,
+    _ARWWI,
+    0,
+    () => exports.AssumeRoleWithWebIdentityRequest$,
+    () => exports.AssumeRoleWithWebIdentityResponse$,
+];
 
 
 /***/ })
