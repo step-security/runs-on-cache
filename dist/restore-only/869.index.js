@@ -805,7 +805,7 @@ class LoginCredentialsFetcher {
         return this.profileData.login_session;
     }
     async refresh(token) {
-        const { SigninClient, CreateOAuth2TokenCommand } = await Promise.all(/* import() */[__webpack_require__.e(817), __webpack_require__.e(762)]).then(__webpack_require__.t.bind(__webpack_require__, 99762, 19));
+        const { SigninClient, CreateOAuth2TokenCommand } = await Promise.all(/* import() */[__webpack_require__.e(817), __webpack_require__.e(762)]).then(__webpack_require__.t.bind(__webpack_require__, 99762, 23));
         const { logger, userAgentAppId } = this.callerClientConfig ?? {};
         const isH2 = (requestHandler) => {
             return requestHandler?.metadata?.handlerProtocol === "h2";
