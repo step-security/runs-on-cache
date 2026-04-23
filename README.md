@@ -1,3 +1,5 @@
+[![StepSecurity Maintained Action](https://raw.githubusercontent.com/step-security/maintained-actions-assets/main/assets/maintained-action-banner.png)](https://docs.stepsecurity.io/actions/stepsecurity-maintained-actions)
+
 # Shockingly faster cache action
 
 This action is a drop-in replacement for the official actions/cache@v4 action, maintained by StepSecurity. It provides high-performance caching using S3, optimized for self-hosted or RunsOn runners.
