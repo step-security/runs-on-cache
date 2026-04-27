@@ -512,7 +512,7 @@ exports.UnsupportedGrantTypeException = UnsupportedGrantTypeException;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getRuntimeConfig = void 0;
-const tslib_1 = __webpack_require__(14509);
+const tslib_1 = __webpack_require__(36890);
 const package_json_1 = tslib_1.__importDefault(__webpack_require__(39955));
 const core_1 = __webpack_require__(8704);
 const util_user_agent_node_1 = __webpack_require__(51656);
