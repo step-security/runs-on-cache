@@ -143,7 +143,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.createGetRequest = createGetRequest;
 exports.getCredentials = getCredentials;
 const property_provider_1 = __webpack_require__(56855);
-const protocol_http_1 = __webpack_require__(31202);
+const protocol_http_1 = __webpack_require__(8821);
 const smithy_client_1 = __webpack_require__(27942);
 const util_stream_1 = __webpack_require__(35121);
 function createGetRequest(url) {
@@ -240,7 +240,7 @@ Object.defineProperty(exports, "fromHttp", ({ enumerable: true, get: function ()
 "use strict";
 
 
-var protocolHttp = __webpack_require__(31202);
+var protocolHttp = __webpack_require__(8821);
 var querystringBuilder = __webpack_require__(71649);
 var utilBase64 = __webpack_require__(2564);
 
@@ -771,7 +771,7 @@ exports.constructStack = constructStack;
 "use strict";
 
 
-var protocolHttp = __webpack_require__(31202);
+var protocolHttp = __webpack_require__(8821);
 var querystringBuilder = __webpack_require__(71649);
 var http = __webpack_require__(58611);
 var https = __webpack_require__(65692);
@@ -1637,7 +1637,7 @@ exports.memoize = memoize;
 
 /***/ }),
 
-/***/ 31202:
+/***/ 8821:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
