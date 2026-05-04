@@ -147,7 +147,7 @@ var httpAuthSchemeProvider = __webpack_require__(62041);
 var runtimeConfig = __webpack_require__(82696);
 var regionConfigResolver = __webpack_require__(36463);
 var protocolHttp = __webpack_require__(46572);
-var schemas_0 = __webpack_require__(51382);
+var schemas_0 = __webpack_require__(29001);
 var errors = __webpack_require__(92378);
 var SSOServiceException = __webpack_require__(7330);
 
@@ -506,7 +506,7 @@ const util_base64_1 = __webpack_require__(76249);
 const util_utf8_1 = __webpack_require__(55969);
 const httpAuthSchemeProvider_1 = __webpack_require__(62041);
 const endpointResolver_1 = __webpack_require__(13903);
-const schemas_0_1 = __webpack_require__(51382);
+const schemas_0_1 = __webpack_require__(29001);
 const getRuntimeConfig = (config) => {
     return {
         apiVersion: "2019-06-10",
@@ -547,7 +547,7 @@ exports.getRuntimeConfig = getRuntimeConfig;
 
 /***/ }),
 
-/***/ 51382:
+/***/ 29001:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
