@@ -11,8 +11,8 @@ Also note that you no longer have any limit on the size of the cache. The bucket
 If no S3 bucket is provided, it will also transparently switch to the default behaviour. This means you can use this action and switch between RunsOn runners and official GitHub runners with no change.
 
 ```yaml
-  uses: step-security/runs-on-cache@v4
-    with:
+  uses: step-security/runs-on-cache@v5
+  with:
       ...
 ```
 
@@ -25,7 +25,7 @@ If you want to use this in your own infrastructure, setup your AWS credentials w
 ```yaml
   - uses: aws-actions/configure-aws-credentials@v4
     ...
-  - uses: step-security/runs-on-cache@v4
+  - uses: step-security/runs-on-cache@v5
     with:
       ...
     env:

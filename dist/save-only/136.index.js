@@ -20,7 +20,7 @@ var schema = __webpack_require__(26890);
 var httpAuthSchemes = __webpack_require__(97523);
 var signatureV4MultiRegion = __webpack_require__(5785);
 var serde = __webpack_require__(92430);
-var nodeHttpHandler = __webpack_require__(82764);
+var nodeHttpHandler = __webpack_require__(61279);
 var protocols$1 = __webpack_require__(37288);
 
 const q = "ref";

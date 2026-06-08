@@ -1,8 +1,10 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import axios, { isAxiosError } from "axios";
 import * as fs from "fs";
 
 import { Events, Inputs, Outputs, State } from "./constants";
+import * as custom from "./custom/cache";
 import {
     IStateProvider,
     NullStateProvider,
@@ -10,8 +12,6 @@ import {
 } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
-import * as custom from "./custom/cache";
-import axios, { isAxiosError } from "axios";
 const canSaveToS3 = process.env["RUNS_ON_S3_BUCKET_CACHE"] !== undefined;
 
 export async function restoreImpl(

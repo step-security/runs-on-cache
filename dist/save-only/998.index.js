@@ -232,7 +232,7 @@ var retry = __webpack_require__(23609);
 var schema = __webpack_require__(26890);
 var httpAuthSchemes = __webpack_require__(97523);
 var serde = __webpack_require__(92430);
-var nodeHttpHandler = __webpack_require__(82764);
+var nodeHttpHandler = __webpack_require__(61279);
 var protocols$1 = __webpack_require__(37288);
 
 const defaultSSOHttpAuthSchemeParametersProvider = async (config, context, input) => {
