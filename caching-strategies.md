@@ -173,7 +173,7 @@ You can use the output of this action to exit the workflow on cache miss. This w
 steps:
   - uses: actions/checkout@v6
 
-  - uses: step-security/runs-on-cache/restore@v6
+  - uses: step-security/runs-on-cache/restore@v5
     id: cache
     with:
       path: path/to/dependencies
@@ -280,7 +280,7 @@ steps:
   - name: Install Dependencies
     if: steps.cache.outputs.cache-hit != 'true'
     run: ./install.sh
-      
+
   - name: Build
     run: ./build-child-module.sh
 

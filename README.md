@@ -2,7 +2,7 @@
 
 # Shockingly faster cache action
 
-This action is a drop-in replacement for the official actions/cache@v4 action, maintained by StepSecurity. It provides high-performance caching using S3, optimized for self-hosted or RunsOn runners.
+This action is a drop-in replacement for the official actions/cache@v5 action, maintained by StepSecurity. It provides high-performance caching using S3, optimized for self-hosted or RunsOn runners.
 
 It will automatically store your caches in a dedicated RunsOn S3 bucket that lives close to your self-hosted runners, ensuring you get at least 200MiB/s download and upload throughput when using caches in your workflows. The larger the cache, the faster the speed.
 
