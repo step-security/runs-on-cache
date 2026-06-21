@@ -1,9 +1,12 @@
+import * as cacheUtils from "@actions/cache/lib/internal/cacheUtils";
+import { CompressionMethod } from "@actions/cache/lib/internal/constants";
+import * as tar from "@actions/cache/lib/internal/tar";
 import * as core from "@actions/core";
 import * as fs from "fs";
 import nock from "nock";
-import * as path from "path";
 
-import { DownloadValidationError, restoreCache } from "../src/custom/cache";
+import * as cacheHttpClient from "../src/custom/backend";
+import { restoreCache } from "../src/custom/cache";
 import { downloadCacheHttpClientConcurrent } from "../src/custom/downloadUtils";
 
 // Mock the core module
@@ -119,26 +122,24 @@ describe("Download Validation", () => {
 
         it("should throw DownloadValidationError for empty files", async () => {
             // Mock the cache lookup to return a valid cache entry
-            const mockCacheHttpClient = require("../src/custom/backend");
-            jest.spyOn(mockCacheHttpClient, "getCacheEntry").mockResolvedValue({
+            jest.spyOn(cacheHttpClient, "getCacheEntry").mockResolvedValue({
                 cacheKey: "test-key",
                 archiveLocation: "https://s3.example.com/cache.tar.gz"
             });
 
             // Mock the download to succeed
-            jest.spyOn(mockCacheHttpClient, "downloadCache").mockResolvedValue(
+            jest.spyOn(cacheHttpClient, "downloadCache").mockResolvedValue(
                 undefined
             );
 
             // Mock utils to return 0 file size (empty file)
-            const mockUtils = require("@actions/cache/lib/internal/cacheUtils");
-            jest.spyOn(mockUtils, "getArchiveFileSizeInBytes").mockReturnValue(
+            jest.spyOn(cacheUtils, "getArchiveFileSizeInBytes").mockReturnValue(
                 0
             );
-            jest.spyOn(mockUtils, "createTempDirectory").mockResolvedValue(
+            jest.spyOn(cacheUtils, "createTempDirectory").mockResolvedValue(
                 "/tmp"
             );
-            jest.spyOn(mockUtils, "getCacheFileName").mockReturnValue(
+            jest.spyOn(cacheUtils, "getCacheFileName").mockReturnValue(
                 "cache.tar.gz"
             );
 
@@ -156,36 +157,33 @@ describe("Download Validation", () => {
 
         it("should succeed with valid file size", async () => {
             // Mock the cache lookup to return a valid cache entry
-            const mockCacheHttpClient = require("../src/custom/backend");
-            jest.spyOn(mockCacheHttpClient, "getCacheEntry").mockResolvedValue({
+            jest.spyOn(cacheHttpClient, "getCacheEntry").mockResolvedValue({
                 cacheKey: "test-key",
                 archiveLocation: "https://s3.example.com/cache.tar.gz"
             });
 
             // Mock the download to succeed
-            jest.spyOn(mockCacheHttpClient, "downloadCache").mockResolvedValue(
+            jest.spyOn(cacheHttpClient, "downloadCache").mockResolvedValue(
                 undefined
             );
 
             // Mock utils to return valid file size (>= 512 bytes)
-            const mockUtils = require("@actions/cache/lib/internal/cacheUtils");
-            jest.spyOn(mockUtils, "getArchiveFileSizeInBytes").mockReturnValue(
+            jest.spyOn(cacheUtils, "getArchiveFileSizeInBytes").mockReturnValue(
                 1024
             );
-            jest.spyOn(mockUtils, "createTempDirectory").mockResolvedValue(
+            jest.spyOn(cacheUtils, "createTempDirectory").mockResolvedValue(
                 "/tmp"
             );
-            jest.spyOn(mockUtils, "getCacheFileName").mockReturnValue(
+            jest.spyOn(cacheUtils, "getCacheFileName").mockReturnValue(
                 "cache.tar.gz"
             );
-            jest.spyOn(mockUtils, "getCompressionMethod").mockResolvedValue(
-                "gzip"
+            jest.spyOn(cacheUtils, "getCompressionMethod").mockResolvedValue(
+                CompressionMethod.Gzip
             );
 
             // Mock tar operations
-            const mockTar = require("@actions/cache/lib/internal/tar");
-            jest.spyOn(mockTar, "extractTar").mockResolvedValue(undefined);
-            jest.spyOn(mockTar, "listTar").mockResolvedValue(undefined);
+            jest.spyOn(tar, "extractTar").mockResolvedValue(undefined);
+            jest.spyOn(tar, "listTar").mockResolvedValue(undefined);
 
             const result = await restoreCache(["/test/path"], "test-key");
 

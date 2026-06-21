@@ -1,7 +1,7 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
-import * as fs from "fs";
 import axios, { isAxiosError } from "axios";
+import * as fs from "fs";
 
 import { Events, Inputs, State } from "./constants";
 import * as custom from "./custom/cache";

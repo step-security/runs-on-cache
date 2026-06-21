@@ -69,7 +69,7 @@ const resolveAssumeRoleCredentials = async (profileName, profiles, options, call
     const profileData = profiles[profileName];
     const { source_profile, region } = profileData;
     if (!options.roleAssumer) {
-        const { getDefaultRoleAssumer } = await Promise.all(/* import() */[__webpack_require__.e(764), __webpack_require__.e(136)]).then(__webpack_require__.t.bind(__webpack_require__, 1136, 19));
+        const { getDefaultRoleAssumer } = await __webpack_require__.e(/* import() */ 136).then(__webpack_require__.t.bind(__webpack_require__, 1136, 19));
         options.roleAssumer = getDefaultRoleAssumer({
             ...options.clientConfig,
             credentialProviderLogger: options.logger,
@@ -136,7 +136,7 @@ const resolveProcessCredentials = async (options, profile) => __webpack_require_
 })().then((creds) => client.setCredentialFeature(creds, "CREDENTIALS_PROFILE_PROCESS", "v")));
 
 const resolveSsoCredentials = async (profile, profileData, options = {}, callerClientConfig) => {
-    const { fromSSO } = await Promise.all(/* import() */[__webpack_require__.e(764), __webpack_require__.e(998)]).then(__webpack_require__.t.bind(__webpack_require__, 60998, 19));
+    const { fromSSO } = await __webpack_require__.e(/* import() */ 998).then(__webpack_require__.t.bind(__webpack_require__, 60998, 19));
     return fromSSO({
         profile,
         logger: options.logger,
@@ -283,7 +283,7 @@ class LoginCredentialsFetcher {
         return this.profileData.login_session;
     }
     async refresh(token) {
-        const { SigninClient, CreateOAuth2TokenCommand } = await Promise.all(/* import() */[__webpack_require__.e(764), __webpack_require__.e(762)]).then(__webpack_require__.t.bind(__webpack_require__, 99762, 19));
+        const { SigninClient, CreateOAuth2TokenCommand } = await __webpack_require__.e(/* import() */ 762).then(__webpack_require__.t.bind(__webpack_require__, 99762, 19));
         const { logger, userAgentAppId } = this.callerClientConfig ?? {};
         const isH2 = (requestHandler) => {
             return requestHandler?.metadata?.handlerProtocol === "h2";
