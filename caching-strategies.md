@@ -12,9 +12,9 @@ This document lists some of the strategies (and example workflows if possible) w
 jobs:
   build:
     runs-on: ubuntu-latest
-    uses: step-security/runs-on-cache@v5
-    with:
-      key: ${{ some-metadata }}-cache
+    - uses: step-security/runs-on-cache@v5
+      with:
+        key: ${{ some-metadata }}-cache
 ```
 
 In your workflows, you can use different strategies to name your key depending on your use case so that the cache is scoped appropriately for your need. For example, you can have cache specific to OS, or based on the lockfile or commit SHA or even workflow run.
