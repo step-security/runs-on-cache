@@ -19,11 +19,15 @@ A cache today is immutable and cannot be updated. But some use cases require the
           restore-keys: |
             primes-${{ runner.os }}
   ```
+
   Please note that this will create a new cache on every run and hence will consume the cache [quota](./README.md#cache-limits).
-  
+
 ## Use cache across feature branches
+
 Reusing cache across feature branches is not allowed today to provide cache [isolation](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache). However if both feature branches are from the default branch, a good way to achieve this is to ensure that the default branch has a cache. This cache will then be consumable by both feature branches.
+
 ## Cross OS cache
+
 From `v3.2.3` cache is cross-os compatible when `enableCrossOsArchive` input is passed as true. This means that a cache created on `ubuntu-latest` or `mac-latest` can be used by `windows-latest` and vice versa, provided the workflow which runs on `windows-latest` have input `enableCrossOsArchive` as true. This is useful to cache dependencies which are independent of the runner platform. This will help reduce the consumption of the cache quota and help build for multiple platforms from the same cache. Things to keep in mind while using this feature:
 
 - Only cache files that are compatible across OSs.
@@ -45,12 +49,13 @@ on:
     types:
       - closed
   workflow_dispatch:
+
 jobs:
   cleanup:
     runs-on: ubuntu-latest
     permissions:
       # `actions:write` permission is required to delete caches
-      #   See also: https://docs.github.com/en/rest/step-security/runs-on-cache?apiVersion=2022-11-28#delete-a-github-actions-cache-for-a-repository-using-a-cache-id
+      #   See also: https://docs.github.com/en/rest/actions/cache?apiVersion=2022-11-28#delete-a-github-actions-cache-for-a-repository-using-a-cache-id
       actions: write
       contents: read
     steps:
@@ -72,4 +77,5 @@ jobs:
           GH_REPO: ${{ github.repository }}
           BRANCH: refs/pull/${{ github.event.pull_request.number }}/merge
 ```
+
 </details>

@@ -5,13 +5,9 @@ on:
   pull_request:
     branches:
       - main
-      - releases/**
   push:
     branches:
       - main
-      - releases/**
-      - fix/**
-      - v4*
 
 jobs:
   # End to end save and restore

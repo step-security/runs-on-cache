@@ -95,7 +95,7 @@ jobs:
 
     - name: Restore cached Prime Numbers
       id: cache-prime-numbers-restore
-      uses: step-security/cache/restore@v5
+      uses: step-security/runs-on-cache/restore@v5
       with:
         key: ${{ runner.os }}-prime-numbers
         path: |
@@ -107,7 +107,7 @@ jobs:
     - name: Always Save Prime Numbers
       id: cache-prime-numbers-save
       if: always() && steps.cache-prime-numbers-restore.outputs.cache-hit != 'true'
-      uses: step-security/cache/save@v5
+      uses: step-security/runs-on-cache/save@v5
       with:
         key: ${{ steps.cache-prime-numbers-restore.outputs.cache-primary-key }}
         path: |
