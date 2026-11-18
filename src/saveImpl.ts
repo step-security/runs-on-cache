@@ -95,7 +95,11 @@ export async function saveImpl(
             core.info(`Cache saved with key: ${primaryKey}`);
         }
     } catch (error: unknown) {
-        utils.logWarning((error as Error).message);
+        if (core.getInput("fail-on-save-error") === "true") {
+            core.setFailed((error as Error).message);
+        } else {
+            utils.logWarning((error as Error).message);
+        }
     }
     return cacheId;
 }
@@ -122,7 +126,7 @@ export async function saveOnlyRun(
     // that all promises that we care about have successfully
     // resolved, so simply exit with success.
     if (earlyExit) {
-        process.exit(0);
+        process.exit(process.exitCode || 0);
     }
 }
 
@@ -143,7 +147,7 @@ export async function saveRun(earlyExit?: boolean | undefined): Promise<void> {
     // that all promises that we care about have successfully
     // resolved, so simply exit with success.
     if (earlyExit) {
-        process.exit(0);
+        process.exit(process.exitCode || 0);
     }
 }
 

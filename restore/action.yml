@@ -23,6 +23,12 @@ inputs:
     description: 'Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache'
     default: 'false'
     required: false
+  exact-match-only:
+    description: 'S3 only: require an exact key instead of accepting extending keys'
+    default: 'false'
+  force-gzip:
+    description: 'S3 only: use gzip even when zstd is installed, for portable archives'
+    default: 'false'
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'

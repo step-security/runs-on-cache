@@ -137,3 +137,26 @@ test("save failing logs the warning message", async () => {
     expect(warningMock).toHaveBeenCalledTimes(1);
     expect(warningMock).toHaveBeenCalledWith("Cache save failed.");
 });
+
+test("early exit preserves an opt-in publication failure", async () => {
+    const oldCode = process.exitCode;
+    const exit = jest
+        .spyOn(process, "exit")
+        .mockImplementation(() => undefined as never);
+    jest.spyOn(core, "setFailed").mockImplementation(() => {
+        process.exitCode = 1;
+    });
+    testUtils.setInput("fail-on-save-error", "true");
+    testUtils.setInput(Inputs.Key, "key");
+    testUtils.setInput(Inputs.Path, "payload");
+    jest.spyOn(cache, "saveCache").mockRejectedValueOnce(
+        new Error("upload failed")
+    );
+    try {
+        await saveOnlyRun(true);
+        expect(exit).toHaveBeenCalledWith(1);
+    } finally {
+        process.exitCode = oldCode;
+        exit.mockRestore();
+    }
+});

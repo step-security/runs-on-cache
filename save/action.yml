@@ -15,6 +15,15 @@ inputs:
     description: 'An optional boolean when enabled, allows windows runners to save caches that can be restored on other platforms'
     default: 'false'
     required: false
+  immutable:
+    description: 'S3 only: fail conditional publication if the exact object already exists'
+    default: 'false'
+  fail-on-save-error:
+    description: 'Fail the action if saving the cache fails instead of warning'
+    default: 'false'
+  force-gzip:
+    description: 'S3 only: use gzip even when zstd is installed, for portable archives'
+    default: 'false'
 runs:
   using: 'node24'
   main: '../dist/save-only/index.js'

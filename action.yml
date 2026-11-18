@@ -34,6 +34,18 @@ inputs:
       save-always does not work as intended and will be removed in a future release.
       A separate `actions/cache/restore` step should be used instead.
       See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
+  immutable:
+    description: 'S3 only: fail conditional publication if the exact object already exists'
+    default: 'false'
+  fail-on-save-error:
+    description: 'Fail the action if saving the cache fails instead of warning'
+    default: 'false'
+  exact-match-only:
+    description: 'S3 only: require an exact key instead of accepting extending keys'
+    default: 'false'
+  force-gzip:
+    description: 'S3 only: use gzip even when zstd is installed, for portable archives'
+    default: 'false'
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'

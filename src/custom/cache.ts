@@ -10,6 +10,7 @@ import {
     listTar
 } from "@actions/cache/lib/internal/tar";
 import { DownloadOptions, UploadOptions } from "@actions/cache/lib/options";
+import { CompressionMethod } from "@actions/cache/lib/internal/constants";
 
 export class ValidationError extends Error {
     constructor(message: string) {
@@ -101,7 +102,10 @@ export async function restoreCache(
         checkKey(key);
     }
 
-    const compressionMethod = await utils.getCompressionMethod();
+    const compressionMethod =
+        core.getInput("force-gzip") === "true"
+            ? CompressionMethod.Gzip
+            : await utils.getCompressionMethod();
     let archivePath = "";
     try {
         // path are needed to compute version
@@ -197,7 +201,10 @@ export async function saveCache(
     checkPaths(paths);
     checkKey(key);
 
-    const compressionMethod = await utils.getCompressionMethod();
+    const compressionMethod =
+        core.getInput("force-gzip") === "true"
+            ? CompressionMethod.Gzip
+            : await utils.getCompressionMethod();
     let cacheId = -1;
 
     const cachePaths = await utils.resolvePaths(paths);
@@ -235,6 +242,7 @@ export async function saveCache(
         // dummy cacheId, if we get there without raising, it means the cache has been saved
         cacheId = 1;
     } catch (error) {
+        if (core.getInput("fail-on-save-error") === "true") throw error;
         const typedError = error as Error;
         if (typedError.name === ValidationError.name) {
             throw error;

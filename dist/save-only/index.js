@@ -79774,6 +79774,7 @@ function getS3Prefix(paths, { compressionMethod, enableCrossOsArchive }) {
 }
 function getCacheEntry(keys_1, paths_1, _a) {
     return __awaiter(this, arguments, void 0, function* (keys, paths, { compressionMethod, enableCrossOsArchive }) {
+        var _b;
         const cacheEntry = {};
         // Find the most recent key matching one of the restoreKeys prefixes
         for (const restoreKey of keys) {
@@ -79790,7 +79791,11 @@ function getCacheEntry(keys_1, paths_1, _a) {
                 if (Contents.length > 0) {
                     // Sort keys by LastModified time in descending order
                     const sortedKeys = Contents.sort((a, b) => Number(b.LastModified) - Number(a.LastModified));
-                    const s3Path = sortedKeys[0].Key; // Return the most recent key
+                    const s3Path = core.getInput("exact-match-only") === "true"
+                        ? (_b = sortedKeys.find(o => o.Key === listObjectsParams.Prefix)) === null || _b === void 0 ? void 0 : _b.Key
+                        : sortedKeys[0].Key;
+                    if (!s3Path)
+                        continue;
                     cacheEntry.cacheKey = s3Path === null || s3Path === void 0 ? void 0 : s3Path.replace(`${s3Prefix}/`, "");
                     cacheEntry.archiveLocation = `s3://${bucketName}/${s3Path}`;
                     return cacheEntry;
@@ -79866,11 +79871,9 @@ function saveCache(key_1, paths_1, archivePath_1, _a) {
         const s3Key = `${s3Prefix}/${key}`;
         const multipartUpload = new lib_storage_1.Upload({
             client: s3Client,
-            params: {
-                Bucket: bucketName,
-                Key: s3Key,
-                Body: (0, fs_1.createReadStream)(archivePath)
-            },
+            params: Object.assign({ Bucket: bucketName, Key: s3Key, Body: (0, fs_1.createReadStream)(archivePath) }, (core.getInput("immutable") === "true"
+                ? { IfNoneMatch: "*" }
+                : {})),
             // Part size in bytes
             partSize: uploadPartSize,
             // Max concurrency
@@ -79884,7 +79887,25 @@ function saveCache(key_1, paths_1, archivePath_1, _a) {
         multipartUpload.on("httpUploadProgress", progress => {
             core.info(`Uploaded part ${progress.part}/${totalParts}.`);
         });
-        yield multipartUpload.done();
+        try {
+            yield multipartUpload.done();
+        }
+        catch (error) {
+            // lib-storage does not abort parts when conditional completion fails.
+            if (core.getInput("immutable") === "true" && multipartUpload.uploadId) {
+                try {
+                    yield s3Client.send(new client_s3_1.AbortMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: s3Key,
+                        UploadId: multipartUpload.uploadId
+                    }));
+                }
+                catch (cleanupError) {
+                    core.warning(`Failed to abort unpublished multipart upload: ${cleanupError}`);
+                }
+            }
+            throw error;
+        }
         core.info(`Cache saved successfully.`);
     });
 }
@@ -79950,6 +79971,7 @@ const path = __importStar(__nccwpck_require__(16928));
 const utils = __importStar(__nccwpck_require__(98299));
 const cacheHttpClient = __importStar(__nccwpck_require__(35951));
 const tar_1 = __nccwpck_require__(95321);
+const constants_1 = __nccwpck_require__(58287);
 class ValidationError extends Error {
     constructor(message) {
         super(message);
@@ -80019,7 +80041,9 @@ function restoreCache(paths_1, primaryKey_1, restoreKeys_1, options_1) {
         for (const key of keys) {
             checkKey(key);
         }
-        const compressionMethod = yield utils.getCompressionMethod();
+        const compressionMethod = core.getInput("force-gzip") === "true"
+            ? constants_1.CompressionMethod.Gzip
+            : yield utils.getCompressionMethod();
         let archivePath = "";
         try {
             // path are needed to compute version
@@ -80091,7 +80115,9 @@ function saveCache(paths_1, key_1, options_1) {
     return __awaiter(this, arguments, void 0, function* (paths, key, options, enableCrossOsArchive = false) {
         checkPaths(paths);
         checkKey(key);
-        const compressionMethod = yield utils.getCompressionMethod();
+        const compressionMethod = core.getInput("force-gzip") === "true"
+            ? constants_1.CompressionMethod.Gzip
+            : yield utils.getCompressionMethod();
         let cacheId = -1;
         const cachePaths = yield utils.resolvePaths(paths);
         core.debug("Cache Paths:");
@@ -80118,6 +80144,8 @@ function saveCache(paths_1, key_1, options_1) {
             cacheId = 1;
         }
         catch (error) {
+            if (core.getInput("fail-on-save-error") === "true")
+                throw error;
             const typedError = error;
             if (typedError.name === ValidationError.name) {
                 throw error;
@@ -80550,7 +80578,12 @@ function saveImpl(stateProvider) {
             }
         }
         catch (error) {
-            utils.logWarning(error.message);
+            if (core.getInput("fail-on-save-error") === "true") {
+                core.setFailed(error.message);
+            }
+            else {
+                utils.logWarning(error.message);
+            }
         }
         return cacheId;
     });
@@ -80576,7 +80609,7 @@ function saveOnlyRun(earlyExit) {
         // that all promises that we care about have successfully
         // resolved, so simply exit with success.
         if (earlyExit) {
-            process.exit(0);
+            process.exit(process.exitCode || 0);
         }
     });
 }
@@ -80598,7 +80631,7 @@ function saveRun(earlyExit) {
         // that all promises that we care about have successfully
         // resolved, so simply exit with success.
         if (earlyExit) {
-            process.exit(0);
+            process.exit(process.exitCode || 0);
         }
     });
 }

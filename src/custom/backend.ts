@@ -1,5 +1,6 @@
 import {
     S3Client,
+    AbortMultipartUploadCommand,
     GetObjectCommand,
     ListObjectsV2Command
 } from "@aws-sdk/client-s3";
@@ -122,7 +123,13 @@ export async function getCacheEntry(
                 const sortedKeys = Contents.sort(
                     (a, b) => Number(b.LastModified) - Number(a.LastModified)
                 );
-                const s3Path = sortedKeys[0].Key; // Return the most recent key
+                const s3Path =
+                    core.getInput("exact-match-only") === "true"
+                        ? sortedKeys.find(
+                              o => o.Key === listObjectsParams.Prefix
+                          )?.Key
+                        : sortedKeys[0].Key;
+                if (!s3Path) continue;
                 cacheEntry.cacheKey = s3Path?.replace(`${s3Prefix}/`, "");
                 cacheEntry.archiveLocation = `s3://${bucketName}/${s3Path}`;
                 return cacheEntry;
@@ -231,7 +238,10 @@ export async function saveCache(
         params: {
             Bucket: bucketName,
             Key: s3Key,
-            Body: createReadStream(archivePath)
+            Body: createReadStream(archivePath),
+            ...(core.getInput("immutable") === "true"
+                ? { IfNoneMatch: "*" }
+                : {})
         },
         // Part size in bytes
         partSize: uploadPartSize,
@@ -253,6 +263,26 @@ export async function saveCache(
         core.info(`Uploaded part ${progress.part}/${totalParts}.`);
     });
 
-    await multipartUpload.done();
+    try {
+        await multipartUpload.done();
+    } catch (error) {
+        // lib-storage does not abort parts when conditional completion fails.
+        if (core.getInput("immutable") === "true" && multipartUpload.uploadId) {
+            try {
+                await s3Client.send(
+                    new AbortMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: s3Key,
+                        UploadId: multipartUpload.uploadId
+                    })
+                );
+            } catch (cleanupError) {
+                core.warning(
+                    `Failed to abort unpublished multipart upload: ${cleanupError}`
+                );
+            }
+        }
+        throw error;
+    }
     core.info(`Cache saved successfully.`);
 }
