@@ -6,7 +6,7 @@ import * as fs from "fs";
 import nock from "nock";
 
 import * as cacheHttpClient from "../src/custom/backend";
-import { restoreCache } from "../src/custom/cache";
+import { restoreCache, saveCache } from "../src/custom/cache";
 import { downloadCacheHttpClientConcurrent } from "../src/custom/downloadUtils";
 
 // Mock the core module
@@ -190,4 +190,74 @@ describe("Download Validation", () => {
             expect(result).toBe("test-key"); // Should return the cache key on success
         });
     });
+});
+
+describe("opt-in S3 save policies", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        jest.spyOn(cacheUtils, "resolvePaths").mockResolvedValue(["payload"]);
+        jest.spyOn(cacheUtils, "createTempDirectory").mockResolvedValue(
+            "/tmp/cache-policies"
+        );
+        jest.spyOn(cacheUtils, "getArchiveFileSizeInBytes").mockReturnValue(
+            1024
+        );
+        jest.spyOn(cacheUtils, "unlinkFile").mockResolvedValue(undefined);
+        jest.spyOn(tar, "createTar").mockResolvedValue(undefined);
+    });
+    afterEach(() => jest.restoreAllMocks());
+
+    it.each(["", "true"])(
+        "fail-on-save-error=%s preserves warnings or rejects",
+        async strict => {
+            jest.spyOn(core, "getInput").mockImplementation(name =>
+                name === "fail-on-save-error" ? strict : ""
+            );
+            const failure = new Error("S3 publication failed");
+            jest.spyOn(cacheHttpClient, "saveCache").mockRejectedValue(failure);
+            const result = saveCache(["payload"], "key");
+            if (strict) {
+                await expect(result).rejects.toBe(failure);
+            } else {
+                await expect(result).resolves.toBe(-1);
+                expect(core.warning).toHaveBeenCalledWith(
+                    "Failed to save: S3 publication failed"
+                );
+            }
+        }
+    );
+
+    it.each(["", "true"])(
+        "force-gzip=%s selects the same format for save and restore",
+        async force => {
+            jest.spyOn(core, "getInput").mockImplementation(name =>
+                name === "force-gzip" ? force : ""
+            );
+            jest.spyOn(cacheUtils, "getCompressionMethod").mockResolvedValue(
+                CompressionMethod.Zstd
+            );
+            const save = jest
+                .spyOn(cacheHttpClient, "saveCache")
+                .mockResolvedValue(undefined);
+            const lookup = jest
+                .spyOn(cacheHttpClient, "getCacheEntry")
+                .mockResolvedValue({});
+            await saveCache(["payload"], "key");
+            await restoreCache(["payload"], "key");
+            const compressionMethod = force
+                ? CompressionMethod.Gzip
+                : CompressionMethod.Zstd;
+            expect(save).toHaveBeenCalledWith(
+                "key",
+                ["payload"],
+                expect.any(String),
+                expect.objectContaining({ compressionMethod })
+            );
+            expect(lookup).toHaveBeenCalledWith(
+                ["key"],
+                ["payload"],
+                expect.objectContaining({ compressionMethod })
+            );
+        }
+    );
 });

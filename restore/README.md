@@ -11,6 +11,10 @@ The restore action restores a cache. It works similarly to the `cache` action ex
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 * `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
 * `lookup-only` - If true, only checks if cache entry exists and skips download. Default: `false`
+* `exact-match-only` - S3 only: match each primary or restore key exactly instead of accepting extending keys. Default: `false`
+* `force-gzip` - S3 only: use gzip even when zstd is installed. Use the same setting when saving. Default: `false`
+
+See [optional S3 policies](../README.md#optional-s3-policies) for compression compatibility and exact-key behavior.
 
 ### Outputs
 

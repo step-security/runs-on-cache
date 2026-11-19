@@ -79643,7 +79643,11 @@ var Inputs;
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
     Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
-    Inputs["LookupOnly"] = "lookup-only"; // Input for cache, restore action
+    Inputs["LookupOnly"] = "lookup-only";
+    Inputs["Immutable"] = "immutable";
+    Inputs["FailOnSaveError"] = "fail-on-save-error";
+    Inputs["ExactMatchOnly"] = "exact-match-only";
+    Inputs["ForceGzip"] = "force-gzip"; // Input for cache, restore, save action
 })(Inputs || (exports.Inputs = Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -79719,13 +79723,14 @@ exports.getCacheVersion = getCacheVersion;
 exports.getCacheEntry = getCacheEntry;
 exports.downloadCache = downloadCache;
 exports.saveCache = saveCache;
-const client_s3_1 = __nccwpck_require__(53711);
-const { getSignedUrl } = __nccwpck_require__(18505);
-const fs_1 = __nccwpck_require__(79896);
-const crypto = __importStar(__nccwpck_require__(76982));
-const core = __importStar(__nccwpck_require__(37484));
 const utils = __importStar(__nccwpck_require__(98299));
+const core = __importStar(__nccwpck_require__(37484));
+const client_s3_1 = __nccwpck_require__(53711);
 const lib_storage_1 = __nccwpck_require__(22358);
+const s3_request_presigner_1 = __nccwpck_require__(18505);
+const crypto = __importStar(__nccwpck_require__(76982));
+const fs_1 = __nccwpck_require__(79896);
+const constants_1 = __nccwpck_require__(27242);
 const downloadUtils_1 = __nccwpck_require__(118);
 // if executing from RunsOn, unset any existing AWS credential env variables so that we can use the IAM instance profile for credentials
 // see unsetCredentials() in https://github.com/aws-actions/configure-aws-credentials/blob/v4.0.2/src/helpers.ts#L44
@@ -79774,6 +79779,7 @@ function getS3Prefix(paths, { compressionMethod, enableCrossOsArchive }) {
 }
 function getCacheEntry(keys_1, paths_1, _a) {
     return __awaiter(this, arguments, void 0, function* (keys, paths, { compressionMethod, enableCrossOsArchive }) {
+        var _b;
         const cacheEntry = {};
         // Find the most recent key matching one of the restoreKeys prefixes
         for (const restoreKey of keys) {
@@ -79790,7 +79796,13 @@ function getCacheEntry(keys_1, paths_1, _a) {
                 if (Contents.length > 0) {
                     // Sort keys by LastModified time in descending order
                     const sortedKeys = Contents.sort((a, b) => Number(b.LastModified) - Number(a.LastModified));
-                    const s3Path = sortedKeys[0].Key; // Return the most recent key
+                    // S3 prefix listings also include keys extending the requested key.
+                    const s3Path = core.getInput(constants_1.Inputs.ExactMatchOnly) === "true"
+                        ? (_b = sortedKeys.find(o => o.Key === listObjectsParams.Prefix)) === null || _b === void 0 ? void 0 : _b.Key
+                        : sortedKeys[0].Key;
+                    if (!s3Path) {
+                        continue;
+                    }
                     cacheEntry.cacheKey = s3Path === null || s3Path === void 0 ? void 0 : s3Path.replace(`${s3Prefix}/`, "");
                     cacheEntry.archiveLocation = `s3://${bucketName}/${s3Path}`;
                     return cacheEntry;
@@ -79822,7 +79834,7 @@ function downloadCache(archiveLocation, archivePath, options) {
                     Bucket: bucketName,
                     Key: objectKey
                 });
-                const url = yield getSignedUrl(s3Client, command, {
+                const url = yield (0, s3_request_presigner_1.getSignedUrl)(s3Client, command, {
                     expiresIn: 3600
                 });
                 yield (0, downloadUtils_1.downloadCacheHttpClientConcurrent)(url, archivePath, Object.assign(Object.assign({}, options), { downloadConcurrency: downloadQueueSize, concurrentBlobDownloads: true, partSize: downloadPartSize }));
@@ -79866,11 +79878,9 @@ function saveCache(key_1, paths_1, archivePath_1, _a) {
         const s3Key = `${s3Prefix}/${key}`;
         const multipartUpload = new lib_storage_1.Upload({
             client: s3Client,
-            params: {
-                Bucket: bucketName,
-                Key: s3Key,
-                Body: (0, fs_1.createReadStream)(archivePath)
-            },
+            params: Object.assign({ Bucket: bucketName, Key: s3Key, Body: (0, fs_1.createReadStream)(archivePath) }, (core.getInput(constants_1.Inputs.Immutable) === "true"
+                ? { IfNoneMatch: "*" }
+                : {})),
             // Part size in bytes
             partSize: uploadPartSize,
             // Max concurrency
@@ -79884,7 +79894,26 @@ function saveCache(key_1, paths_1, archivePath_1, _a) {
         multipartUpload.on("httpUploadProgress", progress => {
             core.info(`Uploaded part ${progress.part}/${totalParts}.`);
         });
-        yield multipartUpload.done();
+        try {
+            yield multipartUpload.done();
+        }
+        catch (error) {
+            // lib-storage does not abort parts when conditional completion fails.
+            if (core.getInput(constants_1.Inputs.Immutable) === "true" &&
+                multipartUpload.uploadId) {
+                try {
+                    yield s3Client.send(new client_s3_1.AbortMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: s3Key,
+                        UploadId: multipartUpload.uploadId
+                    }));
+                }
+                catch (cleanupError) {
+                    core.warning(`Failed to abort unpublished multipart upload: ${cleanupError}`);
+                }
+            }
+            throw error;
+        }
         core.info(`Cache saved successfully.`);
     });
 }
@@ -79945,11 +79974,13 @@ exports.DownloadValidationError = exports.ReserveCacheError = exports.Validation
 exports.isFeatureAvailable = isFeatureAvailable;
 exports.restoreCache = restoreCache;
 exports.saveCache = saveCache;
+const utils = __importStar(__nccwpck_require__(98299));
+const constants_1 = __nccwpck_require__(58287);
+const tar_1 = __nccwpck_require__(95321);
 const core = __importStar(__nccwpck_require__(37484));
 const path = __importStar(__nccwpck_require__(16928));
-const utils = __importStar(__nccwpck_require__(98299));
+const constants_2 = __nccwpck_require__(27242);
 const cacheHttpClient = __importStar(__nccwpck_require__(35951));
-const tar_1 = __nccwpck_require__(95321);
 class ValidationError extends Error {
     constructor(message) {
         super(message);
@@ -80019,7 +80050,9 @@ function restoreCache(paths_1, primaryKey_1, restoreKeys_1, options_1) {
         for (const key of keys) {
             checkKey(key);
         }
-        const compressionMethod = yield utils.getCompressionMethod();
+        const compressionMethod = core.getInput(constants_2.Inputs.ForceGzip) === "true"
+            ? constants_1.CompressionMethod.Gzip
+            : yield utils.getCompressionMethod();
         let archivePath = "";
         try {
             // path are needed to compute version
@@ -80091,7 +80124,9 @@ function saveCache(paths_1, key_1, options_1) {
     return __awaiter(this, arguments, void 0, function* (paths, key, options, enableCrossOsArchive = false) {
         checkPaths(paths);
         checkKey(key);
-        const compressionMethod = yield utils.getCompressionMethod();
+        const compressionMethod = core.getInput(constants_2.Inputs.ForceGzip) === "true"
+            ? constants_1.CompressionMethod.Gzip
+            : yield utils.getCompressionMethod();
         let cacheId = -1;
         const cachePaths = yield utils.resolvePaths(paths);
         core.debug("Cache Paths:");
@@ -80118,6 +80153,9 @@ function saveCache(paths_1, key_1, options_1) {
             cacheId = 1;
         }
         catch (error) {
+            if (core.getInput(constants_2.Inputs.FailOnSaveError) === "true") {
+                throw error;
+            }
             const typedError = error;
             if (typedError.name === ValidationError.name) {
                 throw error;
@@ -96885,6 +96923,42 @@ class StorageContextClient extends import_src.StorageClient {
 
 /***/ }),
 
+/***/ 83627:
+/***/ ((module) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var generatedModels_exports = {};
+__export(generatedModels_exports, {
+  KnownEncryptionAlgorithmType: () => KnownEncryptionAlgorithmType
+});
+module.exports = __toCommonJS(generatedModels_exports);
+var KnownEncryptionAlgorithmType = /* @__PURE__ */ ((KnownEncryptionAlgorithmType2) => {
+  KnownEncryptionAlgorithmType2["AES256"] = "AES256";
+  return KnownEncryptionAlgorithmType2;
+})(KnownEncryptionAlgorithmType || {});
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+//# sourceMappingURL=generatedModels.js.map
+
+
+/***/ }),
+
 /***/ 30247:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -107834,6 +107908,176 @@ const listType = {
 
 /***/ }),
 
+/***/ 56635:
+/***/ ((module) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var appendBlob_exports = {};
+module.exports = __toCommonJS(appendBlob_exports);
+//# sourceMappingURL=appendBlob.js.map
+
+
+/***/ }),
+
+/***/ 68355:
+/***/ ((module) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var blob_exports = {};
+module.exports = __toCommonJS(blob_exports);
+//# sourceMappingURL=blob.js.map
+
+
+/***/ }),
+
+/***/ 17188:
+/***/ ((module) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var blockBlob_exports = {};
+module.exports = __toCommonJS(blockBlob_exports);
+//# sourceMappingURL=blockBlob.js.map
+
+
+/***/ }),
+
+/***/ 15337:
+/***/ ((module) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var container_exports = {};
+module.exports = __toCommonJS(container_exports);
+//# sourceMappingURL=container.js.map
+
+
+/***/ }),
+
+/***/ 82354:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default"));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var operationsInterfaces_exports = {};
+module.exports = __toCommonJS(operationsInterfaces_exports);
+__reExport(operationsInterfaces_exports, __nccwpck_require__(26865), module.exports);
+__reExport(operationsInterfaces_exports, __nccwpck_require__(15337), module.exports);
+__reExport(operationsInterfaces_exports, __nccwpck_require__(68355), module.exports);
+__reExport(operationsInterfaces_exports, __nccwpck_require__(14400), module.exports);
+__reExport(operationsInterfaces_exports, __nccwpck_require__(56635), module.exports);
+__reExport(operationsInterfaces_exports, __nccwpck_require__(17188), module.exports);
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 14400:
+/***/ ((module) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var pageBlob_exports = {};
+module.exports = __toCommonJS(pageBlob_exports);
+//# sourceMappingURL=pageBlob.js.map
+
+
+/***/ }),
+
+/***/ 26865:
+/***/ ((module) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var service_exports = {};
+module.exports = __toCommonJS(service_exports);
+//# sourceMappingURL=service.js.map
+
+
+/***/ }),
+
 /***/ 40535:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -111501,176 +111745,6 @@ const filterBlobsOperationSpec = {
 
 /***/ }),
 
-/***/ 56635:
-/***/ ((module) => {
-
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var appendBlob_exports = {};
-module.exports = __toCommonJS(appendBlob_exports);
-//# sourceMappingURL=appendBlob.js.map
-
-
-/***/ }),
-
-/***/ 68355:
-/***/ ((module) => {
-
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var blob_exports = {};
-module.exports = __toCommonJS(blob_exports);
-//# sourceMappingURL=blob.js.map
-
-
-/***/ }),
-
-/***/ 17188:
-/***/ ((module) => {
-
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var blockBlob_exports = {};
-module.exports = __toCommonJS(blockBlob_exports);
-//# sourceMappingURL=blockBlob.js.map
-
-
-/***/ }),
-
-/***/ 15337:
-/***/ ((module) => {
-
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var container_exports = {};
-module.exports = __toCommonJS(container_exports);
-//# sourceMappingURL=container.js.map
-
-
-/***/ }),
-
-/***/ 82354:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default"));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var operationsInterfaces_exports = {};
-module.exports = __toCommonJS(operationsInterfaces_exports);
-__reExport(operationsInterfaces_exports, __nccwpck_require__(26865), module.exports);
-__reExport(operationsInterfaces_exports, __nccwpck_require__(15337), module.exports);
-__reExport(operationsInterfaces_exports, __nccwpck_require__(68355), module.exports);
-__reExport(operationsInterfaces_exports, __nccwpck_require__(14400), module.exports);
-__reExport(operationsInterfaces_exports, __nccwpck_require__(56635), module.exports);
-__reExport(operationsInterfaces_exports, __nccwpck_require__(17188), module.exports);
-// Annotate the CommonJS export names for ESM import in node:
-0 && (0);
-//# sourceMappingURL=index.js.map
-
-
-/***/ }),
-
-/***/ 14400:
-/***/ ((module) => {
-
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var pageBlob_exports = {};
-module.exports = __toCommonJS(pageBlob_exports);
-//# sourceMappingURL=pageBlob.js.map
-
-
-/***/ }),
-
-/***/ 26865:
-/***/ ((module) => {
-
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var service_exports = {};
-module.exports = __toCommonJS(service_exports);
-//# sourceMappingURL=service.js.map
-
-
-/***/ }),
-
 /***/ 5313:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -111757,42 +111831,6 @@ class StorageClient extends coreHttpCompat.ExtendedServiceClient {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (0);
 //# sourceMappingURL=storageClient.js.map
-
-
-/***/ }),
-
-/***/ 83627:
-/***/ ((module) => {
-
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var generatedModels_exports = {};
-__export(generatedModels_exports, {
-  KnownEncryptionAlgorithmType: () => KnownEncryptionAlgorithmType
-});
-module.exports = __toCommonJS(generatedModels_exports);
-var KnownEncryptionAlgorithmType = /* @__PURE__ */ ((KnownEncryptionAlgorithmType2) => {
-  KnownEncryptionAlgorithmType2["AES256"] = "AES256";
-  return KnownEncryptionAlgorithmType2;
-})(KnownEncryptionAlgorithmType || {});
-// Annotate the CommonJS export names for ESM import in node:
-0 && (0);
-//# sourceMappingURL=generatedModels.js.map
 
 
 /***/ }),

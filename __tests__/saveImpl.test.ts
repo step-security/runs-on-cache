@@ -406,3 +406,16 @@ test("save with valid inputs uploads a cache", async () => {
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
+
+test("strict save errors fail the action", async () => {
+    testUtils.setInput("fail-on-save-error", "true");
+    testUtils.setInput(Inputs.Key, "key");
+    testUtils.setInput(Inputs.Path, "payload");
+    jest.spyOn(core, "getState").mockReturnValue("");
+    jest.spyOn(cache, "saveCache").mockRejectedValue(
+        new Error("upload failed")
+    );
+    await saveImpl(new StateProvider());
+    expect(core.setFailed).toHaveBeenCalledWith("upload failed");
+    expect(actionUtils.logWarning).not.toHaveBeenCalled();
+});

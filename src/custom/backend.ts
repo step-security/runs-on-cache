@@ -1,19 +1,22 @@
-import {
-    S3Client,
-    GetObjectCommand,
-    ListObjectsV2Command
-} from "@aws-sdk/client-s3";
-const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
-import { createReadStream } from "fs";
-import * as crypto from "crypto";
+import * as utils from "@actions/cache/lib/internal/cacheUtils";
+import { CompressionMethod } from "@actions/cache/lib/internal/constants";
 import {
     DownloadOptions,
     getDownloadOptions
 } from "@actions/cache/lib/options";
-import { CompressionMethod } from "@actions/cache/lib/internal/constants";
 import * as core from "@actions/core";
-import * as utils from "@actions/cache/lib/internal/cacheUtils";
+import {
+    AbortMultipartUploadCommand,
+    GetObjectCommand,
+    ListObjectsV2Command,
+    S3Client
+} from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import * as crypto from "crypto";
+import { createReadStream } from "fs";
+
+import { Inputs } from "../constants";
 import { downloadCacheHttpClientConcurrent } from "./downloadUtils";
 
 export interface ArtifactCacheEntry {
@@ -122,7 +125,16 @@ export async function getCacheEntry(
                 const sortedKeys = Contents.sort(
                     (a, b) => Number(b.LastModified) - Number(a.LastModified)
                 );
-                const s3Path = sortedKeys[0].Key; // Return the most recent key
+                // S3 prefix listings also include keys extending the requested key.
+                const s3Path =
+                    core.getInput(Inputs.ExactMatchOnly) === "true"
+                        ? sortedKeys.find(
+                              o => o.Key === listObjectsParams.Prefix
+                          )?.Key
+                        : sortedKeys[0].Key;
+                if (!s3Path) {
+                    continue;
+                }
                 cacheEntry.cacheKey = s3Path?.replace(`${s3Prefix}/`, "");
                 cacheEntry.archiveLocation = `s3://${bucketName}/${s3Path}`;
                 return cacheEntry;
@@ -231,7 +243,10 @@ export async function saveCache(
         params: {
             Bucket: bucketName,
             Key: s3Key,
-            Body: createReadStream(archivePath)
+            Body: createReadStream(archivePath),
+            ...(core.getInput(Inputs.Immutable) === "true"
+                ? { IfNoneMatch: "*" }
+                : {})
         },
         // Part size in bytes
         partSize: uploadPartSize,
@@ -253,6 +268,29 @@ export async function saveCache(
         core.info(`Uploaded part ${progress.part}/${totalParts}.`);
     });
 
-    await multipartUpload.done();
+    try {
+        await multipartUpload.done();
+    } catch (error) {
+        // lib-storage does not abort parts when conditional completion fails.
+        if (
+            core.getInput(Inputs.Immutable) === "true" &&
+            multipartUpload.uploadId
+        ) {
+            try {
+                await s3Client.send(
+                    new AbortMultipartUploadCommand({
+                        Bucket: bucketName,
+                        Key: s3Key,
+                        UploadId: multipartUpload.uploadId
+                    })
+                );
+            } catch (cleanupError) {
+                core.warning(
+                    `Failed to abort unpublished multipart upload: ${cleanupError}`
+                );
+            }
+        }
+        throw error;
+    }
     core.info(`Cache saved successfully.`);
 }

@@ -78,6 +78,23 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 
 * `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `10`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cache-segment-restore-timeout)
 
+### Optional S3 policies
+
+These inputs default to `false`, preserving existing cache behavior. They require an S3 backend except for `fail-on-save-error`.
+
+| Input | Available actions | Effect when `true` |
+| --- | --- | --- |
+| `immutable` | cache, save | Commit with `If-None-Match: *`, including multipart completion; an existing object cannot be overwritten. |
+| `fail-on-save-error` | cache, save | Fail the action instead of warning when publication fails. Combine with `immutable` to reject duplicate publishers. |
+| `exact-match-only` | cache, restore | Accept only a listed object whose key exactly equals a requested key; do not restore a newer extending key. |
+| `force-gzip` | cache, save, restore | Use gzip regardless of installed zstd. Use the same setting for producer and consumer, together with `enableCrossOsArchive` for cross-platform handoffs. |
+
+These controls do not introduce an artifact service, retention policy, or new transfer implementation. Callers own artifact packaging and identity.
+
+For a required, immutable publication, use the standalone `save` action with both `immutable: true` and `fail-on-save-error: true`. `immutable` alone prevents overwrites but retains warning-only save failures. The combined cache action still skips saving after an exact cache hit.
+
+With `exact-match-only: true`, each primary or restore key is treated as a complete object key rather than a prefix. `force-gzip` changes the cache version, so producers and consumers must use the same compression setting and `path` input to find the same entry.
+
 ### Outputs
 
 * `cache-hit` - A string value to indicate an exact match was found for the key.
