@@ -16,7 +16,7 @@ inputs:
     default: 'false'
     required: false
   immutable:
-    description: 'S3 only: fail conditional publication if the exact object already exists'
+    description: 'S3 only: prevent replacing an existing object with conditional publication'
     default: 'false'
   fail-on-save-error:
     description: 'Fail the action if saving the cache fails instead of warning'

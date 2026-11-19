@@ -26,7 +26,9 @@ beforeEach(() => {
     jest.spyOn(core, "getInput").mockImplementation(name => inputs[name] || "");
 });
 afterEach(() => {
-    for (const name of Object.keys(inputs)) delete inputs[name];
+    for (const name of Object.keys(inputs)) {
+        delete inputs[name];
+    }
     jest.restoreAllMocks();
 });
 
@@ -53,6 +55,24 @@ test.each(["", "true"])(
     }
 );
 
+test("exact lookup selects the requested key despite a newer extending key", async () => {
+    inputs["exact-match-only"] = "true";
+    jest.spyOn(S3Client.prototype, "send").mockImplementation(async command => {
+        const prefix = (command.input as { Prefix: string }).Prefix;
+        return {
+            Contents: [
+                { Key: prefix, LastModified: new Date(0) },
+                { Key: `${prefix}-extra`, LastModified: new Date(1) }
+            ]
+        } as never;
+    });
+    const result = await backend.getCacheEntry(["key"], ["directory"], {
+        compressionMethod: CompressionMethod.Gzip,
+        enableCrossOsArchive: true
+    });
+    expect(result.cacheKey).toBe("key");
+});
+
 test.each([
     [1, ""],
     [1, "true"],
@@ -70,13 +90,15 @@ test.each([
         jest.spyOn(S3Client.prototype, "send").mockImplementation(
             async command => {
                 commands.push(command);
-                if (command instanceof CreateMultipartUploadCommand)
+                if (command instanceof CreateMultipartUploadCommand) {
                     return { UploadId: "upload" } as never;
+                }
                 if (
                     command instanceof UploadPartCommand ||
                     command instanceof PutObjectCommand
-                )
+                ) {
                     return { ETag: "etag" } as never;
+                }
                 return {} as never;
             }
         );
@@ -109,12 +131,15 @@ test("immutable multipart conflict cannot replace the winning object", async () 
     const send = jest
         .spyOn(S3Client.prototype, "send")
         .mockImplementation(async command => {
-            if (command instanceof CreateMultipartUploadCommand)
+            if (command instanceof CreateMultipartUploadCommand) {
                 return { UploadId: "upload" } as never;
-            if (command instanceof UploadPartCommand)
+            }
+            if (command instanceof UploadPartCommand) {
                 return { ETag: "etag" } as never;
-            if (command instanceof CompleteMultipartUploadCommand)
+            }
+            if (command instanceof CompleteMultipartUploadCommand) {
                 throw conflict;
+            }
             return {} as never;
         });
     try {

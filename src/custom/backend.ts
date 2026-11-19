@@ -1,20 +1,22 @@
-import {
-    S3Client,
-    AbortMultipartUploadCommand,
-    GetObjectCommand,
-    ListObjectsV2Command
-} from "@aws-sdk/client-s3";
-const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
-import { createReadStream } from "fs";
-import * as crypto from "crypto";
+import * as utils from "@actions/cache/lib/internal/cacheUtils";
+import { CompressionMethod } from "@actions/cache/lib/internal/constants";
 import {
     DownloadOptions,
     getDownloadOptions
 } from "@actions/cache/lib/options";
-import { CompressionMethod } from "@actions/cache/lib/internal/constants";
 import * as core from "@actions/core";
-import * as utils from "@actions/cache/lib/internal/cacheUtils";
+import {
+    AbortMultipartUploadCommand,
+    GetObjectCommand,
+    ListObjectsV2Command,
+    S3Client
+} from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import * as crypto from "crypto";
+import { createReadStream } from "fs";
+
+import { Inputs } from "../constants";
 import { downloadCacheHttpClientConcurrent } from "./downloadUtils";
 
 export interface ArtifactCacheEntry {
@@ -123,13 +125,16 @@ export async function getCacheEntry(
                 const sortedKeys = Contents.sort(
                     (a, b) => Number(b.LastModified) - Number(a.LastModified)
                 );
+                // S3 prefix listings also include keys extending the requested key.
                 const s3Path =
-                    core.getInput("exact-match-only") === "true"
+                    core.getInput(Inputs.ExactMatchOnly) === "true"
                         ? sortedKeys.find(
                               o => o.Key === listObjectsParams.Prefix
                           )?.Key
                         : sortedKeys[0].Key;
-                if (!s3Path) continue;
+                if (!s3Path) {
+                    continue;
+                }
                 cacheEntry.cacheKey = s3Path?.replace(`${s3Prefix}/`, "");
                 cacheEntry.archiveLocation = `s3://${bucketName}/${s3Path}`;
                 return cacheEntry;
@@ -239,7 +244,7 @@ export async function saveCache(
             Bucket: bucketName,
             Key: s3Key,
             Body: createReadStream(archivePath),
-            ...(core.getInput("immutable") === "true"
+            ...(core.getInput(Inputs.Immutable) === "true"
                 ? { IfNoneMatch: "*" }
                 : {})
         },
@@ -267,7 +272,10 @@ export async function saveCache(
         await multipartUpload.done();
     } catch (error) {
         // lib-storage does not abort parts when conditional completion fails.
-        if (core.getInput("immutable") === "true" && multipartUpload.uploadId) {
+        if (
+            core.getInput(Inputs.Immutable) === "true" &&
+            multipartUpload.uploadId
+        ) {
             try {
                 await s3Client.send(
                     new AbortMultipartUploadCommand({

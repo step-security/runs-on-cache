@@ -35,7 +35,7 @@ inputs:
       A separate `actions/cache/restore` step should be used instead.
       See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
   immutable:
-    description: 'S3 only: fail conditional publication if the exact object already exists'
+    description: 'S3 only: prevent replacing an existing object with conditional publication'
     default: 'false'
   fail-on-save-error:
     description: 'Fail the action if saving the cache fails instead of warning'

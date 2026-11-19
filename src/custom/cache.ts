@@ -1,16 +1,18 @@
 // https://github.com/actions/toolkit/blob/%40actions/cache%403.2.2/packages/cache/src/cache.ts
 
-import * as core from "@actions/core";
-import * as path from "path";
 import * as utils from "@actions/cache/lib/internal/cacheUtils";
-import * as cacheHttpClient from "./backend";
+import { CompressionMethod } from "@actions/cache/lib/internal/constants";
 import {
     createTar,
     extractTar,
     listTar
 } from "@actions/cache/lib/internal/tar";
 import { DownloadOptions, UploadOptions } from "@actions/cache/lib/options";
-import { CompressionMethod } from "@actions/cache/lib/internal/constants";
+import * as core from "@actions/core";
+import * as path from "path";
+
+import { Inputs } from "../constants";
+import * as cacheHttpClient from "./backend";
 
 export class ValidationError extends Error {
     constructor(message: string) {
@@ -103,7 +105,7 @@ export async function restoreCache(
     }
 
     const compressionMethod =
-        core.getInput("force-gzip") === "true"
+        core.getInput(Inputs.ForceGzip) === "true"
             ? CompressionMethod.Gzip
             : await utils.getCompressionMethod();
     let archivePath = "";
@@ -202,7 +204,7 @@ export async function saveCache(
     checkKey(key);
 
     const compressionMethod =
-        core.getInput("force-gzip") === "true"
+        core.getInput(Inputs.ForceGzip) === "true"
             ? CompressionMethod.Gzip
             : await utils.getCompressionMethod();
     let cacheId = -1;
@@ -242,7 +244,9 @@ export async function saveCache(
         // dummy cacheId, if we get there without raising, it means the cache has been saved
         cacheId = 1;
     } catch (error) {
-        if (core.getInput("fail-on-save-error") === "true") throw error;
+        if (core.getInput(Inputs.FailOnSaveError) === "true") {
+            throw error;
+        }
         const typedError = error as Error;
         if (typedError.name === ValidationError.name) {
             throw error;

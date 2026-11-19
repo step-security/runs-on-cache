@@ -95,7 +95,7 @@ export async function saveImpl(
             core.info(`Cache saved with key: ${primaryKey}`);
         }
     } catch (error: unknown) {
-        if (core.getInput("fail-on-save-error") === "true") {
+        if (core.getInput(Inputs.FailOnSaveError) === "true") {
             core.setFailed((error as Error).message);
         } else {
             utils.logWarning((error as Error).message);
@@ -124,7 +124,7 @@ export async function saveOnlyRun(
     // which is a possibility if HTTP requests are dangling
     // due to retries or timeouts. We know that if we got here
     // that all promises that we care about have successfully
-    // resolved, so simply exit with success.
+    // resolved, so exit while preserving any failure reported by core.setFailed.
     if (earlyExit) {
         process.exit(process.exitCode || 0);
     }
@@ -145,7 +145,7 @@ export async function saveRun(earlyExit?: boolean | undefined): Promise<void> {
     // which is a possibility if HTTP requests are dangling
     // due to retries or timeouts. We know that if we got here
     // that all promises that we care about have successfully
-    // resolved, so simply exit with success.
+    // resolved, so exit while preserving any failure reported by core.setFailed.
     if (earlyExit) {
         process.exit(process.exitCode || 0);
     }

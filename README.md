@@ -91,6 +91,10 @@ These inputs default to `false`, preserving existing cache behavior. They requir
 
 These controls do not introduce an artifact service, retention policy, or new transfer implementation. Callers own artifact packaging and identity.
 
+For a required, immutable publication, use the standalone `save` action with both `immutable: true` and `fail-on-save-error: true`. `immutable` alone prevents overwrites but retains warning-only save failures. The combined cache action still skips saving after an exact cache hit.
+
+With `exact-match-only: true`, each primary or restore key is treated as a complete object key rather than a prefix. `force-gzip` changes the cache version, so producers and consumers must use the same compression setting and `path` input to find the same entry.
+
 ### Outputs
 
 * `cache-hit` - A string value to indicate an exact match was found for the key.

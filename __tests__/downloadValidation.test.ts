@@ -216,8 +216,9 @@ describe("opt-in S3 save policies", () => {
             const failure = new Error("S3 publication failed");
             jest.spyOn(cacheHttpClient, "saveCache").mockRejectedValue(failure);
             const result = saveCache(["payload"], "key");
-            if (strict) await expect(result).rejects.toBe(failure);
-            else {
+            if (strict) {
+                await expect(result).rejects.toBe(failure);
+            } else {
                 await expect(result).resolves.toBe(-1);
                 expect(core.warning).toHaveBeenCalledWith(
                     "Failed to save: S3 publication failed"
