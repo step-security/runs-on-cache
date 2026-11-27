@@ -79774,6 +79774,7 @@ function getS3Prefix(paths, { compressionMethod, enableCrossOsArchive }) {
 }
 function getCacheEntry(keys_1, paths_1, _a) {
     return __awaiter(this, arguments, void 0, function* (keys, paths, { compressionMethod, enableCrossOsArchive }) {
+        var _b, _c;
         const cacheEntry = {};
         // Find the most recent key matching one of the restoreKeys prefixes
         for (const restoreKey of keys) {
@@ -79790,7 +79791,8 @@ function getCacheEntry(keys_1, paths_1, _a) {
                 if (Contents.length > 0) {
                     // Sort keys by LastModified time in descending order
                     const sortedKeys = Contents.sort((a, b) => Number(b.LastModified) - Number(a.LastModified));
-                    const s3Path = sortedKeys[0].Key; // Return the most recent key
+                    // Prefer the exact key before falling back to the newest prefix match.
+                    const s3Path = (_c = (_b = sortedKeys.find(object => object.Key === listObjectsParams.Prefix)) === null || _b === void 0 ? void 0 : _b.Key) !== null && _c !== void 0 ? _c : sortedKeys[0].Key;
                     cacheEntry.cacheKey = s3Path === null || s3Path === void 0 ? void 0 : s3Path.replace(`${s3Prefix}/`, "");
                     cacheEntry.archiveLocation = `s3://${bucketName}/${s3Path}`;
                     return cacheEntry;

@@ -122,7 +122,11 @@ export async function getCacheEntry(
                 const sortedKeys = Contents.sort(
                     (a, b) => Number(b.LastModified) - Number(a.LastModified)
                 );
-                const s3Path = sortedKeys[0].Key; // Return the most recent key
+                // Prefer the exact key before falling back to the newest prefix match.
+                const s3Path =
+                    sortedKeys.find(
+                        object => object.Key === listObjectsParams.Prefix
+                    )?.Key ?? sortedKeys[0].Key;
                 cacheEntry.cacheKey = s3Path?.replace(`${s3Prefix}/`, "");
                 cacheEntry.archiveLocation = `s3://${bucketName}/${s3Path}`;
                 return cacheEntry;
